@@ -37,6 +37,15 @@ from text_to_num.lang.portuguese import OrdinalsMerger
 omg = OrdinalsMerger()
 USE_PT_ORDINALS_MERGER = True
 
+CURRENCIES = {"dollar": "$", 
+              "dollars": "$",
+              "USD": "$",
+              "euro": "€",
+              "euros": "€",
+              "EUR": "€",
+            #   "pound": "£",
+            #   "pounds": "£",
+            }
 
 def look_ahead(sequence: Sequence[Any]) -> Iterator[Tuple[Any, Any]]:
     """Look-ahead iterator.
@@ -88,6 +97,14 @@ def text2num(text: str, lang: Union[str, Language], relaxed: bool = False) -> in
 
     return num_parser.value
 
+def add_comma(large_digit_word):
+    new_large_digit_word = ""
+    for i, digit in enumerate(reversed(large_digit_word)):
+        if i % 3 == 0 and i != 0:
+            new_large_digit_word += ","
+        new_large_digit_word += digit
+    new_large_digit_word = "".join(list(reversed(new_large_digit_word)))
+    return new_large_digit_word
 
 def alpha2digit(
     text: str,
@@ -158,7 +175,73 @@ def alpha2digit(
             num_builder.close()
             if num_builder.value:
                 out_tokens.append(num_builder.value)
-            out_segments.append(" ".join(out_tokens))
+
+            out_seg = []
+            prev_is_number = False
+            prev_is_float = False
+            for word, ahead in look_ahead(out_tokens):
+                if word == "one":
+                    if prev_is_number:
+                        word = "1"
+                        if prev_is_float:
+                            out_seg[-1] = out_seg[-1].strip()
+                    elif not ahead:
+                        pass
+                    elif ahead.startswith("0"):
+                        word = "1"
+                
+                if word.startswith("0.") and len(out_seg) > 0 and out_seg[-1] == "1 ":
+                    out_seg[-1] = str(1 + float(word)) + " "
+                    prev_is_float = True
+                    continue
+                try:
+                    word_int = int(word)
+                    word_is_int = True
+                except:
+                    word_is_int = False
+                
+                try:
+                    word_int = float(word)
+                    word_is_float = True
+                except:
+                    word_is_float = False
+                
+                try:
+                    ahead_int = int(ahead)
+                    ahead_is_int = True
+                except:
+                    ahead_is_int = False
+
+                if word_is_int and word_int > 9999:
+                    # fengluh: add , in large numbers
+                    word = add_comma(word)
+                    out_seg.append(word+" ")
+                elif word_is_float and not word_is_int and ahead_is_int:
+                    out_seg.append(word)
+                else:
+                    out_seg.append(word+" ")
+                
+                # fengluh: replace "percent" with "%" if preceding is a number
+                if prev_is_number and word == "percent":
+                    out_seg[-1] = "% "
+                
+                if prev_is_number and word in CURRENCIES:
+                    symbol = CURRENCIES[word]
+                    out_seg.pop()
+                    out_seg[-1] = symbol+out_seg[-1]
+                
+                if word_is_float and not word_is_int:
+                    prev_is_float = True
+                else:
+                    prev_is_float = False
+                
+                if word_is_float:
+                    prev_is_number = True
+                else:
+                    prev_is_number = False
+
+            out_segments.append("".join(out_seg).strip())
+
             out_segments.append(sep)
         text = "".join(out_segments)
 

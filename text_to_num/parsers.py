@@ -100,6 +100,8 @@ class WordStreamValueParser(WordStreamValueParserInterface):
             and self.grp_val < 20
         ):
             expected = word in self.lang.HUNDRED
+        elif self.grp_val >= 20 and self.grp_val < 100:
+            expected = word in self.lang.HUNDRED or word in self.lang.UNITS
         elif self.last_word in self.lang.MHUNDREDS:
             expected = True
         elif self.last_word in self.lang.MTENS:
@@ -159,7 +161,7 @@ class WordStreamValueParser(WordStreamValueParserInterface):
         if not word:
             return False
 
-        if word == self.lang.AND and look_ahead in self.lang.AND_NUMS:
+        if word == self.lang.AND and look_ahead in self.lang.AND_NUMS and self.value >= 100:  # fengluh: handle case like: [text] and five, fourteen and five ...
             return True
 
         word = self.lang.normalize(word)
@@ -204,6 +206,11 @@ class WordStreamValueParser(WordStreamValueParserInterface):
             else:
                 self.grp_val += self.lang.NUMBERS[word]
         else:
+            if (self.grp_val >= 100 or self.n000_val >= 1000) and word in self.lang.UNITS and self.grp_val // 10 % 10 == 0:
+                # fengluh: handle informal number texts such as one hundred seven eight. make sure the current value's tenth digit is 0
+                tenth = self.grp_val % 10
+                self.grp_val = self.grp_val - tenth + tenth * 10 + self.lang.NUMBERS[word]
+                return True
             self.skip = None
             return False
         return True
@@ -615,6 +622,9 @@ class WordToDigitParser:
     def is_alone(self, word: str, next_word: Optional[str]) -> bool:
         """Check if the word is 'alone' meaning its part of 'Language.NEVER_IF_ALONE'
         exceptions and has no other numbers around itself."""
+        if word in self.lang.MULTIPLIERS and self.in_frac:
+            self.close()
+            return True
         return (
             not self.open
             and word in self.lang.NEVER_IF_ALONE

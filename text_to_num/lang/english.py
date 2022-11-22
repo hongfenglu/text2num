@@ -78,7 +78,6 @@ MTENS_WSTENS: Set[str] = set()
 # "hundred" has a special status (see Rules)
 HUNDRED = {"hundred": 100, "hundreds": 100}
 
-
 # Composites are tens already composed with terminals in one word.
 # Composites are terminals.
 
@@ -112,12 +111,12 @@ class English(Language):
 
     SIGN = {"plus": "+", "minus": "-"}
     ZERO = {"zero", "o"}
-    DECIMAL_SEP = "point"
+    DECIMAL_SEP = "point,dot"   # fengluh: can convert dot ⇒ .
     DECIMAL_SYM = "."
 
-    AND_NUMS: Set[str] = set()
+    AND_NUMS: Set[str] = set(NUMBERS.keys())    # fengluh: can handle 'and' as '+' between numbers
     AND = "and"
-    NEVER_IF_ALONE = {"one"}
+    NEVER_IF_ALONE = {"one", "hundred", "hundreds", "thousand", "thousands", "million", "millions", "billion", "billions", "trillion", "trillions"}  # fengluh: include all multipliers
 
     # Relaxed composed numbers (two-words only)
     # start => (next, target)
