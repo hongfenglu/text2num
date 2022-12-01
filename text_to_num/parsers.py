@@ -101,7 +101,7 @@ class WordStreamValueParser(WordStreamValueParserInterface):
         ):
             expected = word in self.lang.HUNDRED
         elif self.grp_val >= 20 and self.grp_val < 100:
-            expected = word in self.lang.HUNDRED or word in self.lang.UNITS
+            expected = word in self.lang.HUNDRED or word in self.lang.UNITS and self.grp_val % 10 == 0
         elif self.last_word in self.lang.MHUNDREDS:
             expected = True
         elif self.last_word in self.lang.MTENS:
@@ -206,11 +206,11 @@ class WordStreamValueParser(WordStreamValueParserInterface):
             else:
                 self.grp_val += self.lang.NUMBERS[word]
         else:
-            if (self.grp_val >= 100 or self.n000_val >= 1000) and word in self.lang.UNITS and self.grp_val // 10 % 10 == 0:
-                # fengluh: handle informal number texts such as one hundred seven eight. make sure the current value's tenth digit is 0
-                tenth = self.grp_val % 10
-                self.grp_val = self.grp_val - tenth + tenth * 10 + self.lang.NUMBERS[word]
-                return True
+            # if (self.grp_val >= 100 or self.n000_val >= 1000) and word in self.lang.UNITS and self.grp_val // 10 % 10 == 0:
+            #     # fengluh: handle informal number texts such as one hundred seven eight. make sure the current value's tenth digit is 0
+            #     tenth = self.grp_val % 10
+            #     self.grp_val = self.grp_val - tenth + tenth * 10 + self.lang.NUMBERS[word]
+            #     return True
             self.skip = None
             return False
         return True

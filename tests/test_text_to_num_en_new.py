@@ -49,9 +49,7 @@ class TestTextToNumEN(TestCase):
         self.assertEqual(text2num("one hundred fifteen", "en"), 115)
         self.assertEqual(text2num("seventy-five thousands", "en"), 75000)
         self.assertEqual(text2num("thousand nine hundred twenty", "en"), 1920)
-        self.assertEqual(text2num("sixty hundred", "en"), 6000)
-        self.assertEqual(text2num("twenty two hundred", "en"), 2200)
-
+        
     def test_text2num_centuries(self):
         self.assertEqual(text2num("nineteen hundred seventy-three", "en"), 1973)
 
@@ -85,12 +83,26 @@ class TestTextToNumEN(TestCase):
         expected = "53,000,243,724"
         self.assertEqual(alpha2digit(source, "en"), expected)
 
+    def test_hundred_multiplier_changes(self):
+        self.assertEqual(text2num("sixty hundred", "en"), 6000)
+        self.assertEqual(text2num("twenty two hundred", "en"), 2200)
+
+        self.assertEqual(alpha2digit("thirty-three nine", "en"), "33 9")
+        self.assertEqual(alpha2digit("plus thirty-three nine", "en"), "+33 9")
+        self.assertEqual(alpha2digit("minus thirty-three nine", "en"), "-33 9")
+        self.assertEqual(alpha2digit("thirty-three hundred", "en"), "3300")
+        self.assertEqual(alpha2digit("thirty-three hundred one", "en"), "3301")
+        self.assertEqual(alpha2digit("thirty-three hundred and one", "en"), "3301")
+        self.assertEqual(alpha2digit("thirty-three hundred and one point five", "en"), "3301.5")
+        self.assertEqual(alpha2digit("thirty-three and one point five", "en"), "33 and 1.5")
+        self.assertEqual(alpha2digit("twenty one three", "en"), "21 3")
+
     def test_alpha2digit_formal(self):
-        # source = "plus thirty-three nine sixty zero six twelve twenty-one"
-        # expected = "+33 9 60 06 12 21"
-        # self.assertEqual(alpha2digit(source, "en"), expected)
-        # source = "plus thirty-three nine sixty o six twelve twenty-one"
-        # self.assertEqual(alpha2digit(source, "en"), expected)
+        source = "plus thirty-three nine sixty zero six twelve twenty-one"
+        expected = "+33 9 60 06 12 21"
+        self.assertEqual(alpha2digit(source, "en"), expected)
+        source = "plus thirty-three nine sixty o six twelve twenty-one"
+        self.assertEqual(alpha2digit(source, "en"), expected)
 
         source = "zero nine sixty zero six twelve twenty-one"
         expected = "09 60 06 12 21"
@@ -108,14 +120,18 @@ class TestTextToNumEN(TestCase):
 
         self.assertEqual(alpha2digit("two thousand and four hundred", "en"), "2400")
         self.assertEqual(alpha2digit("two thousand and four hundred and five", "en"), "2405")
+        self.assertEqual(alpha2digit("two thousand four hundred and five", "en"), "2405")
+
+        self.assertEqual(alpha2digit("fourteen and five", "en"), "14 and 5")
+
     
     def test_currency(self):
         source = "one thousand two hundred sixty-six dollars."
         expected = "$1266."
         self.assertEqual(alpha2digit(source, "en"), expected)
 
-        source = "one thousand USD."
-        expected = "$1000."
+        source = "one thousand point one USD"
+        expected = "$1000.1"
         self.assertEqual(alpha2digit(source, "en"), expected)
 
         source = "one thousand euros in cash."
@@ -178,6 +194,19 @@ class TestTextToNumEN(TestCase):
         self.assertEqual(alpha2digit("twenty dot one five six", "en"), "20.15 6")
 
         self.assertEqual(alpha2digit("The average density is zero point five", "en"), "The average density is 0.5")
+    
+    def test_alpha2digit_dates(self):
+        source = "May fifth twenty twelve"
+        expected = "May 5th 20 12"
+        self.assertEqual(alpha2digit(source, "en"), expected)
+
+        source = "May five twenty one thirty"
+        expected = "May 5 21 30"
+        self.assertEqual(alpha2digit(source, "en"), expected)
+
+
+
+
 
     def test_alpha2digit_percent(self):
         self.assertEqual(alpha2digit("point fifteen percent", "en"), "0.15 %")
